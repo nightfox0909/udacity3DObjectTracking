@@ -133,7 +133,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 // associate a given bounding box with the keypoints it contains
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    // ...
+    
 }
 
 
@@ -154,5 +154,33 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 
 void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bbBestMatches, DataFrame &prevFrame, DataFrame &currFrame)
 {
-    // ...
+    std::vector<cv::KeyPoint> currMatchedkpts,prevMatchedkpts;
+    
+    for ( auto bb=currFrame.boundingBoxes.begin();bb!=currFrame.boundingBoxes.end();bb++)
+    {
+        
+        searchBboxIntersection(*bb,currFrame.keypoints,currMatchedkpts);
+
+        for (auto bbPrev=prevFrame.boundingBoxes.begin();bbPrev!=prevFrame.boundingBoxes.end();bbPrev++)
+        {
+            searchBboxIntersection(*bbPrev,prevFrame.keypoints,prevMatchedkpts);
+
+        }
+
+        
+
+    }
+}
+
+void searchBboxIntersection (BoundingBox &boundingBox,std::vector<cv::KeyPoint> &kpts, std::vector<cv::KeyPoint> &matchedkpts)
+{
+    //matchedkpts.erase();
+    for (auto kpt=kpts.begin();kpt!=kpts.end();kpt++)
+    {
+        if(boundingBox.roi.contains(kpt->pt))
+        {
+            matchedkpts.push_back(*kpt);
+        }
+
+    }
 }

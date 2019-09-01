@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <numeric>
+#include <set>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -133,7 +134,9 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 // associate a given bounding box with the keypoints it contains
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    
+    float averageEuclDistance = 0.0;
+
+
 }
 
 
@@ -148,7 +151,14 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    // ...
+    // prefilter lidar points to have minimum reflectivity
+    float d1=findMinX(lidarPointsCurr);
+    float d2=findMinX(lidarPointsPrev);
+    float dt=1/frameRate;
+
+    //assume CV model
+    TTC=(d1*dt)/fabs(d2-d1);
+
 }
 
 
@@ -158,20 +168,57 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bb
     
     for ( auto bb=currFrame.boundingBoxes.begin();bb!=currFrame.boundingBoxes.end();bb++)
     {
-        
-        searchBboxIntersection(*bb,currFrame.keypoints,currMatchedkpts);
+        std::vector<cv::DMatch> ROIdMatches;
+        set<BoundingBox> potentialMatches;
+        std::vector<int> potentialMatchesNumber;
+        //std::vector<std::pair<set<BoundingBox>,int>> potentialMatches;
 
-        for (auto bbPrev=prevFrame.boundingBoxes.begin();bbPrev!=prevFrame.boundingBoxes.end();bbPrev++)
+        //Dmatches prev(queryidx),current(trainidx)
+        for (auto mt=matches.begin();mt!=matches.end(),mt++)
         {
-            searchBboxIntersection(*bbPrev,prevFrame.keypoints,prevMatchedkpts);
-
-        }
-
-        
+            if(bb->roi.contains(currFrame[mt->trainIdx].pt))
+            {
+                //ROIdMatches.push_back(*mt);
+                for ( auto bb2=prevFrame.boundingBoxes.begin();bb2!=prevFrame.boundingBoxes.end();bb2++)
+                {
+                    if(bb2->roi.contains(prevFrame[mt->queryIdx].pt)
+                    {
+                        auto tst = potentialMatches.insert(*bb2);
+                        if(tst.second)
+                        {
+                            potentialMatchesNumber.push_back(0);
+                        }
+                        else
+                        {
+                            auto findidx = potentialMatches.find(*bb);
+                            int idx = potentialMatches.begin() - findidx;
+                            potentialMatchesNumber[idx]+=1;
+                        }
+                        
+                    }
+                }
+                if(potentialMatches.size()==1)
+                {
+                    currFrame.bbMatches.insert(std::pair<int,int>(potentialMatches.begin()->boxID,bb->boxID));
+                }
+                else if(potentialMatches.size()>1)
+                {
+                    auto maxElementIdx = std::max_element(potentialMatchesNumber.begin(),potentialMatchesNumber.end()) - potentialMatchesNumber.begin();
+                    auto iter=potentialMatches.begin();
+                    std::advance(iter,maxElementIdx);
+                    currFrame.bbMatches.insert(std::pair<int,int>(iter->boxID,bb->boxID));
+                }
+                else
+                {
+                    currFrame.bbMatches.insert(std::pair<int,int>(NULL,bb->boxID));
+                }
+            }
+        }   
 
     }
 }
 
+/*
 void searchBboxIntersection (BoundingBox &boundingBox,std::vector<cv::KeyPoint> &kpts, std::vector<cv::KeyPoint> &matchedkpts)
 {
     //matchedkpts.erase();
@@ -183,4 +230,18 @@ void searchBboxIntersection (BoundingBox &boundingBox,std::vector<cv::KeyPoint> 
         }
 
     }
+}*/
+
+float findMinX (std::vector<LidarPoint> &lidarPoints)
+{
+    float min=lidarPoints[0].x;
+
+    for (auto lidrpt=lidarPoints.begin();lidrpt!=lidarPoints.end();lidrpt++)
+    {
+        if((lidrpt->r > 1.0)  && (minCurr < lidrpt->x))
+        {
+            min=lidrpt->x;
+        }
+    }
+    return (min);
 }

@@ -124,9 +124,11 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     }
 }
 
+
 void detKeypointsModern (std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, string detectorType, bool bVis)
 {
    cv::Ptr<cv::FeatureDetector> detector;
+
   if ( detectorType.compare("AKAZE") == 0 )
   {detector=cv::AKAZE::create();}
   else if (detectorType.compare("BRISK") == 0)
@@ -142,6 +144,7 @@ void detKeypointsModern (std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, str
   
   double t = (double)cv::getTickCount();
   
+
   detector->detect(img,keypoints);
   
   t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();

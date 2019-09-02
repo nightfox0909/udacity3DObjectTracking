@@ -253,7 +253,11 @@ int main(int argc, const char *argv[])
                 // compute TTC for current match
                
                 if( currBB->lidarPoints.size()>0 && prevBB->lidarPoints.size()>0 ) // only compute TTC if we have Lidar points
+<<<<<<< HEAD
                 {   //cout<<"Curr BB:"<<currBB->lidarPoints.size()<<"  PrevBB : "<<prevBB->lidarPoints.size()<<endl;
+=======
+                {   cout<<"Curr BB:"<<currBB->lidarPoints.size()<<"  PrevBB : "<<prevBB->lidarPoints.size()<<endl;
+>>>>>>> 2f2a8ae236f65a5985edcb36730cbc6af42edb9a
                     //// STUDENT ASSIGNMENT
                     //// TASK FP.2 -> compute time-to-collision based on Lidar data (implement -> computeTTCLidar)
                     double ttcLidar; 
@@ -266,7 +270,10 @@ int main(int argc, const char *argv[])
                     double ttcCamera; 
                     clusterKptMatchesWithROI(*currBB, (dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->kptMatches);                    
                     computeTTCCamera((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, currBB->kptMatches, sensorFrameRate, ttcCamera);
+<<<<<<< HEAD
                     cout<<"Lidar TTC: "<<ttcLidar<<" Camera TTC: "<<ttcCamera<<endl;
+=======
+>>>>>>> 2f2a8ae236f65a5985edcb36730cbc6af42edb9a
                     //// EOF STUDENT ASSIGNMENT
 
                     bVis = false;

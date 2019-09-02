@@ -19,9 +19,10 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
-        // ...
+       
+      matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
     }
-
+     double t = (double)cv::getTickCount();
     // perform matching task
     if (selectorType.compare("SEL_NN") == 0)
     { // nearest neighbor (best match)
@@ -30,8 +31,16 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     }
     else if (selectorType.compare("SEL_KNN") == 0)
     { // k nearest neighbors (k=2)
-
-        // ...
+       std::vector< std::vector<cv::DMatch> > knn_matches;
+      matcher->knnMatch(descSource, descRef, knn_matches, 2 );
+      const float ratio_thresh = 0.8f;
+    	for (size_t i = 0; i < knn_matches.size(); i++)
+    	{
+        	if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+        	{
+           	 	matches.push_back(knn_matches[i][0]);
+        	}
+   		}
     }
 }
 
@@ -49,10 +58,22 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
         extractor = cv::BRISK::create(threshold, octaves, patternScale);
     }
-    else
+    else if (descriptorType.compare("BRIEF") == 0) // BRIEF
     {
-
-        //...
+      int bt=32;
+      extractor = cv::xfeatures2d::BriefDescriptorExtractor::create(bt);
+    }
+    else //ORB
+    {
+       int nfeatures=500;
+       float scaleFactor=1.2f;
+      int nlevels=8;
+      int edgeThreshold=31;
+      int firstLevel=0;
+      int WTA_K=2;
+      cv::ORB::ScoreType scoreType=cv::ORB::HARRIS_SCORE; // HARRIS_SCORE =0 FAST_SCORE =1
+      int patchSize=31;
+       extractor = cv::ORB::create(nfeatures,scaleFactor,nlevels,edgeThreshold,firstLevel,WTA_K,scoreType,patchSize);
     }
 
     // perform feature description
@@ -101,4 +122,41 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
         imshow(windowName, visImage);
         cv::waitKey(0);
     }
+}
+
+void detKeypointsModern (std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, string detectorType, bool bVis)
+{
+   cv::Ptr<cv::FeatureDetector> detector;
+  if ( detectorType.compare("AKAZE") == 0 )
+  {detector=cv::AKAZE::create();}
+  else if (detectorType.compare("BRISK") == 0)
+  { detector = cv::BRISK::create();}
+  else if (detectorType.compare("ORB") == 0) 
+  { detector = cv::ORB::create(); }
+  else if ( detectorType.compare("FAST") == 0 )
+  { detector = cv::FastFeatureDetector::create(); }
+  else
+  { detectorType = "SIFT";
+    detector = cv::xfeatures2d::SIFT::create(); 
+  }
+  
+  double t = (double)cv::getTickCount();
+  
+  detector->detect(img,keypoints);
+  
+  t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+  //cout <<detectorType<< " detector with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms | ";
+  cout <<detectorType<<" detection with n="<< keypoints.size() << 1000 * t / 1.0 <<endl;
+  
+  
+  if (bVis)
+    {
+        cv::Mat visImage = img.clone();
+        cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        string windowName = "Detector Results";
+        cv::namedWindow(windowName, 6);
+        imshow(windowName, visImage);
+        cv::waitKey(0);
+    }
+
 }
